@@ -1,4 +1,4 @@
-// Generated from LesParserGrammar.les by LeMP custom tool. LLLPG version: 1.3.0.0
+// Generated from LesParserGrammar.les by LeMP custom tool. LLLPG version: 1.3.2.0
 // Note: you can give command-line arguments to the tool via 'Custom Tool Namespace':
 // --no-out-header       Suppress this message
 // --verbose             Allow verbose messages (shown by VS as 'warnings')
@@ -20,699 +20,205 @@ namespace Loyc.Syntax.Les
 	#pragma warning disable 162, 642
 	public partial class LesParser
 	{
-		LNode Atom(Precedence context, ref RWList<LNode> attrs)
+		public RVList<LNode> ExprList(RVList<LNode> list = default(RVList<LNode>))
 		{
-			TT la0, la1;
-			// line 39
-			LNode e = MissingExpr;
-			LNode _;
-			// Line 41: ( (TT.Id (&{t.EndIndex == LT($LI).StartIndex && context.CanParse(P.Primary)} TT.LParen TT.RParen / ) | (TT.Number|TT.OtherLit|TT.SQString|TT.String|TT.Symbol) | TT.At TT.LBrack TT.RBrack | (TT.PrefixOp|TT.PreSufOp) Expr) | (TT.Colon TT.Indent TT.Dedent greedy(TT.Colon)? / &{context != P.SuperExpr} (TT.Assignment|TT.BQString|TT.Colon|TT.Dot|TT.NormalOp|TT.Not) Expr) | TT.LBrack TT.RBrack Atom | TT.LParen TT.RParen | TT.LBrace TT.RBrace )
+			var endMarker = default(TT);
+			return (ExprList(ref endMarker, list));
+		}
+		void CheckEndMarker(ref TokenType endMarker, ref Token end)
+		{
+			if ((endMarker != end.Type())) {
+				if ((endMarker == default(TT))) {
+					endMarker = end.Type();
+				} else {
+					Error(-1, "Unexpected separator: {0} should be {1}", ToString(end.TypeInt), ToString((int) endMarker));
+				}
+			}
+		}
+		public RVList<LNode> StmtList()
+		{
+			RVList<LNode> result = default(RVList<LNode>);
+			var endMarker = TT.Semicolon;
+			result = ExprList(ref endMarker);
+			return result;
+		}
+		public RVList<LNode> ExprList(ref TokenType endMarker, RVList<LNode> list = default(RVList<LNode>))
+		{
+			TT la0;
+			LNode e = default(LNode);
+			Token end = default(Token);
+			// Line 1: ( / TopExpr)
+			switch ((TT) LA0) {
+			case EOF:
+			case TT.Comma:
+			case TT.Dedent:
+			case TT.RBrace:
+			case TT.RBrack:
+			case TT.RParen:
+			case TT.Semicolon:
+				{
+				}
+				break;
+			default:
+				e = TopExpr();
+				break;
+			}
+			// Line 58: ((TT.Comma|TT.Semicolon) ( / TopExpr))*
+			for (;;) {
+				la0 = (TT) LA0;
+				if (la0 == TT.Comma || la0 == TT.Semicolon) {
+					end = MatchAny();
+					list.Add(e ?? MissingExpr());
+					CheckEndMarker(ref endMarker, ref end);
+					// Line 61: ( / TopExpr)
+					switch ((TT) LA0) {
+					case EOF:
+					case TT.Comma:
+					case TT.Dedent:
+					case TT.RBrace:
+					case TT.RBrack:
+					case TT.RParen:
+					case TT.Semicolon:
+						// line 61
+						e = null;
+						break;
+					default:
+						e = TopExpr();
+						break;
+					}
+				} else
+					break;
+			}
+			if ((e != null || end.Type() == TT.Comma)) {
+				list.Add(e ?? MissingExpr());
+			}
+			return list;
+		}
+		public IEnumerable<LNode> ExprListLazy(Holder<TokenType> endMarker)
+		{
+			TT la0;
+			LNode e = default(LNode);
+			Token end = default(Token);
+			// Line 1: ( / TopExpr)
+			la0 = (TT) LA0;
+			if (la0 == EOF || la0 == TT.Comma || la0 == TT.Semicolon) {
+			} else
+				e = TopExpr();
+			// Line 68: ((TT.Comma|TT.Semicolon) ( / TopExpr))*
+			for (;;) {
+				la0 = (TT) LA0;
+				if (la0 == TT.Comma || la0 == TT.Semicolon) {
+					end = MatchAny();
+					// line 69
+					yield
+					return e ?? MissingExpr();
+					CheckEndMarker(ref endMarker.Value, ref end);
+					// Line 71: ( / TopExpr)
+					la0 = (TT) LA0;
+					if (la0 == EOF || la0 == TT.Comma || la0 == TT.Semicolon)
+						// line 71
+						e = null;
+					else
+						e = TopExpr();
+				} else
+					break;
+			}
+			// line 73
+			if ((e != null || end.Type() == TT.Comma)) {
+				yield
+				return e ?? MissingExpr();
+			}
+		}
+		protected LNode TopExpr()
+		{
+			TT la0;
+			RVList<LNode> attrs = default(RVList<LNode>);
+			LNode e = default(LNode);
+			Token t = default(Token);
+			// Line 90: (TT.LBrack ExprList TT.RBrack)?
+			la0 = (TT) LA0;
+			if (la0 == TT.LBrack) {
+				t = MatchAny();
+				attrs = ExprList();
+				Match((int) TT.RBrack);
+			}
+			// Line 92: (Expr / TT.Id Expr (Particle)*)
 			do {
 				switch ((TT) LA0) {
-				case TT.Id:
-					{
-						var t = MatchAny();
-						// Line 42: (&{t.EndIndex == LT($LI).StartIndex && context.CanParse(P.Primary)} TT.LParen TT.RParen / )
-						la0 = (TT) LA0;
-						if (la0 == TT.LParen) {
-							if (t.EndIndex == LT(0).StartIndex && context.CanParse(P.Primary)) {
-								la1 = (TT) LA(1);
-								if (la1 == TT.RParen) {
-									var p = MatchAny();
-									var rp = MatchAny();
-									// line 44
-									e = ParseCall(t, p, rp.EndIndex);
-								} else
-									// line 45
-									e = F.Id((Symbol) t.Value, t.StartIndex, t.EndIndex);
-							} else
-								// line 45
-								e = F.Id((Symbol) t.Value, t.StartIndex, t.EndIndex);
-						} else
-							// line 45
-							e = F.Id((Symbol) t.Value, t.StartIndex, t.EndIndex);
-					}
-					break;
-				case TT.Number:
-				case TT.OtherLit:
-				case TT.SQString:
-				case TT.String:
-				case TT.Symbol:
-					{
-						var t = MatchAny();
-						// line 49
-						e = F.Literal(t.Value, t.StartIndex, t.EndIndex);
-					}
-					break;
-				case TT.At:
-					{
-						Skip();
-						var t = Match((int) TT.LBrack);
-						var rb = Match((int) TT.RBrack);
-						// line 52
-						e = F.Literal(t.Children, t.StartIndex, rb.EndIndex);
-					}
-					break;
-				case TT.PrefixOp:
-				case TT.PreSufOp:
-					{
-						var t = MatchAny();
-						e = Expr(PrefixPrecedenceOf(t), out _);
-						e = F.Call((Symbol) t.Value, e, t.StartIndex, e.Range.EndIndex);
-						e.BaseStyle = NodeStyle.Operator;
-					}
-					break;
-				case TT.Colon:
-					{
-						if (context != P.SuperExpr) {
-							switch ((TT) LA(1)) {
-							case TT.Indent:
-								goto match5;
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								goto match6;
-							default:
-								goto error;
-							}
-						} else
-							goto match5;
-					}
 				case TT.Assignment:
 				case TT.BQString:
 				case TT.Dot:
 				case TT.NormalOp:
 				case TT.Not:
-					goto match6;
-				case TT.LBrack:
-					{
-						var t = MatchAny();
-						Match((int) TT.RBrack);
-						// line 69
-						attrs = AppendExprsInside(t, attrs);
-						e = Atom(context, ref attrs);
-					}
-					break;
-				case TT.LParen:
-					{
-						var t = MatchAny();
-						var rp = Match((int) TT.RParen);
-						// line 72
-						e = ParseParens(t, rp.EndIndex);
-					}
-					break;
-				case TT.LBrace:
-					{
-						var t = MatchAny();
-						var rb = Match((int) TT.RBrace);
-						// line 74
-						e = ParseBraces(t, rb.EndIndex);
-					}
-					break;
-				default:
-					goto error;
-				}
-				break;
-			match5:
-				{
-					Skip();
-					var t = Match((int) TT.Indent);
-					var rb = Match((int) TT.Dedent);
-					// Line 59: greedy(TT.Colon)?
-					la0 = (TT) LA0;
-					if (la0 == TT.Colon)
-						Skip();
-					// line 60
-					e = ParseBraces(t, rb.EndIndex);
-				}
-				break;
-			match6:
-				{
-					Check(context != P.SuperExpr, "context != P.SuperExpr");
-					var t = MatchAny();
-					e = Expr(PrefixPrecedenceOf(t), out _);
-					e = F.Call((Symbol) t.Value, e, t.StartIndex, e.Range.EndIndex);
-					e.BaseStyle = NodeStyle.Operator;
-				}
-				break;
-			error:
-				{
-					// line 76
-					e = F.Id(S.Missing, LT0.StartIndex, LT0.StartIndex);
-					Error(0, "Expected an expression here");
-				}
-			} while (false);
-			// line 80
-			return e;
-		}
-		LNode Expr(Precedence context, out LNode primary)
-		{
-			TT la1;
-			// line 91
-			LNode e;
-			LNode _;
-			Precedence prec;
-			RWList<LNode> attrs = null;
-			e = Atom(context, ref attrs);
-			// line 93
-			primary = e;
-			// Line 96: greedy( (&{context.CanParse(prec = InfixPrecedenceOf(LT($LI)))} (TT.Assignment|TT.BQString|TT.Colon|TT.Dot|TT.NormalOp) Expr | &{context.CanParse(P.Primary)} TT.Not Expr | &{context.CanParse(SuffixPrecedenceOf(LT($LI)))} (TT.PreSufOp|TT.SuffixOp) | &{e.Range.EndIndex == LT($LI).StartIndex && context.CanParse(P.Primary)} TT.LParen TT.RParen) | (&{context.CanParse(P.Primary)} TT.LBrack TT.RBrack / &{context.CanParse(P.SuperExpr)} Expr greedy(Expr)*) )*
-			for (;;) {
-				switch ((TT) LA0) {
-				case TT.Colon:
-					{
-						if (context.CanParse(prec = InfixPrecedenceOf(LT(0)))) {
-							if (context.CanParse(P.SuperExpr)) {
-								switch ((TT) LA(1)) {
-								case TT.Assignment:
-								case TT.At:
-								case TT.BQString:
-								case TT.Colon:
-								case TT.Dot:
-								case TT.Id:
-								case TT.LBrace:
-								case TT.LBrack:
-								case TT.LParen:
-								case TT.NormalOp:
-								case TT.Not:
-								case TT.Number:
-								case TT.OtherLit:
-								case TT.PrefixOp:
-								case TT.PreSufOp:
-								case TT.SQString:
-								case TT.String:
-								case TT.Symbol:
-									goto match1;
-								case TT.Indent:
-									goto matchExpr;
-								default:
-									goto stop2;
-								}
-							} else {
-								switch ((TT) LA(1)) {
-								case TT.Assignment:
-								case TT.At:
-								case TT.BQString:
-								case TT.Colon:
-								case TT.Dot:
-								case TT.Id:
-								case TT.LBrace:
-								case TT.LBrack:
-								case TT.LParen:
-								case TT.NormalOp:
-								case TT.Not:
-								case TT.Number:
-								case TT.OtherLit:
-								case TT.PrefixOp:
-								case TT.PreSufOp:
-								case TT.SQString:
-								case TT.String:
-								case TT.Symbol:
-									goto match1;
-								default:
-									goto stop2;
-								}
-							}
-						} else if (context.CanParse(P.SuperExpr)) {
-							switch ((TT) LA(1)) {
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.Indent:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								goto matchExpr;
-							default:
-								goto stop2;
-							}
-						} else
-							goto stop2;
-					}
-				case TT.Assignment:
-				case TT.BQString:
-				case TT.Dot:
-				case TT.NormalOp:
-					{
-						if (context.CanParse(prec = InfixPrecedenceOf(LT(0)))) {
-							switch ((TT) LA(1)) {
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								goto match1;
-							default:
-								goto stop2;
-							}
-						} else if (context.CanParse(P.SuperExpr)) {
-							switch ((TT) LA(1)) {
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								goto matchExpr;
-							default:
-								goto stop2;
-							}
-						} else
-							goto stop2;
-					}
-				case TT.Not:
-					{
-						if (context.CanParse(P.Primary)) {
-							switch ((TT) LA(1)) {
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								{
-									Skip();
-									var rhs = Expr(P.Primary, out primary);
-									// line 108
-									RVList<LNode> args;
-									if ((rhs.Calls(S.Tuple))) {
-										args = new RVList<LNode>(e).AddRange(rhs.Args);
-									} else {
-										int i = rhs.Attrs.IndexWithName(S.TriviaInParens);
-										if ((i > -1))
-											rhs = rhs.WithAttrs(rhs.Attrs.RemoveAt(i));
-										args = new RVList<LNode>(e, rhs);
-									}
-									e = primary = F.Call(S.Of, args, e.Range.StartIndex, rhs.Range.EndIndex);
-									e.BaseStyle = NodeStyle.Operator;
-								}
-								break;
-							default:
-								goto stop2;
-							}
-						} else if (context.CanParse(P.SuperExpr)) {
-							switch ((TT) LA(1)) {
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								goto matchExpr;
-							default:
-								goto stop2;
-							}
-						} else
-							goto stop2;
-					}
-					break;
-				case TT.PreSufOp:
-					{
-						if (context.CanParse(SuffixPrecedenceOf(LT(0))))
-							goto match3;
-						else if (context.CanParse(P.SuperExpr)) {
-							switch ((TT) LA(1)) {
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								goto matchExpr;
-							default:
-								goto stop2;
-							}
-						} else
-							goto stop2;
-					}
-				case TT.SuffixOp:
-					{
-						if (context.CanParse(SuffixPrecedenceOf(LT(0))))
-							goto match3;
-						else
-							goto stop2;
-					}
-				case TT.LParen:
-					{
-						if (e.Range.EndIndex == LT(0).StartIndex && context.CanParse(P.Primary)) {
-							la1 = (TT) LA(1);
-							if (la1 == TT.RParen) {
-								var p = MatchAny();
-								var rp = MatchAny();
-								e = primary = ParseCall(e, p, rp.EndIndex);
-								e.BaseStyle = NodeStyle.PrefixNotation;
-							} else
-								goto stop2;
-						} else if (context.CanParse(P.SuperExpr)) {
-							la1 = (TT) LA(1);
-							if (la1 == TT.RParen)
-								goto matchExpr;
-							else
-								goto stop2;
-						} else
-							goto stop2;
-					}
-					break;
-				case TT.LBrack:
-					{
-						if (context.CanParse(P.Primary)) {
-							la1 = (TT) LA(1);
-							if (la1 == TT.RBrack) {
-								var t = MatchAny();
-								var rb = MatchAny();
-								// line 134
-								var args = new RWList<LNode> { 
-									e
-								};
-								AppendExprsInside(t, args);
-								e = primary = F.Call(S.Bracks, args.ToRVList(), e.Range.StartIndex, rb.EndIndex);
-								e.BaseStyle = NodeStyle.Expression;
-							} else
-								goto stop2;
-						} else if (context.CanParse(P.SuperExpr)) {
-							la1 = (TT) LA(1);
-							if (la1 == TT.RBrack)
-								goto matchExpr;
-							else
-								goto stop2;
-						} else
-							goto stop2;
-					}
+				case TT.PrefixOp:
+				case TT.PreOrSufOp:
+					e = Expr(StartStmt);
 					break;
 				case TT.Id:
-				case TT.Number:
-				case TT.OtherLit:
-				case TT.SQString:
-				case TT.String:
-				case TT.Symbol:
 					{
-						if (context.CanParse(P.SuperExpr))
-							goto matchExpr;
-						else
-							goto stop2;
-					}
-				case TT.At:
-					{
-						if (context.CanParse(P.SuperExpr)) {
-							la1 = (TT) LA(1);
-							if (la1 == TT.LBrack)
-								goto matchExpr;
-							else
-								goto stop2;
-						} else
-							goto stop2;
-					}
-				case TT.PrefixOp:
-					{
-						if (context.CanParse(P.SuperExpr)) {
-							switch ((TT) LA(1)) {
-							case TT.Assignment:
-							case TT.At:
-							case TT.BQString:
-							case TT.Colon:
-							case TT.Dot:
-							case TT.Id:
-							case TT.LBrace:
-							case TT.LBrack:
-							case TT.LParen:
-							case TT.NormalOp:
-							case TT.Not:
-							case TT.Number:
-							case TT.OtherLit:
-							case TT.PrefixOp:
-							case TT.PreSufOp:
-							case TT.SQString:
-							case TT.String:
-							case TT.Symbol:
-								goto matchExpr;
-							default:
-								goto stop2;
-							}
-						} else
-							goto stop2;
-					}
-				case TT.LBrace:
-					{
-						if (context.CanParse(P.SuperExpr)) {
-							la1 = (TT) LA(1);
-							if (la1 == TT.RBrace)
-								goto matchExpr;
-							else
-								goto stop2;
-						} else
-							goto stop2;
-					}
-				default:
-					goto stop2;
-				}
-				continue;
-			match1:
-				{
-					var t = MatchAny();
-					var rhs = Expr(prec, out primary);
-					e = F.Call((Symbol) t.Value, e, rhs, e.Range.StartIndex, rhs.Range.EndIndex);
-					e.BaseStyle = NodeStyle.Operator;
-					if ((!prec.CanParse(P.NullDot)))
-						primary = e;
-				}
-				continue;
-			match3:
-				{
-					var t = MatchAny();
-					e = F.Call(ToSuffixOpName((Symbol) t.Value), e, e.Range.StartIndex, t.EndIndex);
-					e.BaseStyle = NodeStyle.Operator;
-					if ((t.Type() == TT.PreSufOp))
-						primary = null;
-				}
-				continue;
-			matchExpr:
-				{
-					// line 144
-					var rhs = RVList<LNode>.Empty;
-					rhs.Add(Expr(P.SuperExpr, out _));
-					// Line 145: greedy(Expr)*
-					for (;;) {
-						switch ((TT) LA0) {
-						case TT.Id:
-						case TT.Number:
-						case TT.OtherLit:
-						case TT.SQString:
-						case TT.String:
-						case TT.Symbol:
-							rhs.Add(Expr(P.SuperExpr, out _));
-							break;
-						case TT.At:
-							{
-								la1 = (TT) LA(1);
-								if (la1 == TT.LBrack)
-									rhs.Add(Expr(P.SuperExpr, out _));
-								else
-									goto stop;
-							}
-							break;
-						case TT.PrefixOp:
-						case TT.PreSufOp:
-							{
-								switch ((TT) LA(1)) {
-								case TT.Assignment:
-								case TT.At:
-								case TT.BQString:
-								case TT.Colon:
-								case TT.Dot:
-								case TT.Id:
-								case TT.LBrace:
-								case TT.LBrack:
-								case TT.LParen:
-								case TT.NormalOp:
-								case TT.Not:
-								case TT.Number:
-								case TT.OtherLit:
-								case TT.PrefixOp:
-								case TT.PreSufOp:
-								case TT.SQString:
-								case TT.String:
-								case TT.Symbol:
-									rhs.Add(Expr(P.SuperExpr, out _));
-									break;
-								default:
-									goto stop;
-								}
-							}
-							break;
-						case TT.Colon:
-							{
-								switch ((TT) LA(1)) {
-								case TT.Assignment:
-								case TT.At:
-								case TT.BQString:
-								case TT.Colon:
-								case TT.Dot:
-								case TT.Id:
-								case TT.Indent:
-								case TT.LBrace:
-								case TT.LBrack:
-								case TT.LParen:
-								case TT.NormalOp:
-								case TT.Not:
-								case TT.Number:
-								case TT.OtherLit:
-								case TT.PrefixOp:
-								case TT.PreSufOp:
-								case TT.SQString:
-								case TT.String:
-								case TT.Symbol:
-									rhs.Add(Expr(P.SuperExpr, out _));
-									break;
-								default:
-									goto stop;
-								}
-							}
-							break;
+						switch ((TT) LA(1)) {
 						case TT.Assignment:
 						case TT.BQString:
 						case TT.Dot:
 						case TT.NormalOp:
-						case TT.Not:
+							e = Expr(StartStmt);
+							break;
+						case TT.Colon:
 							{
-								switch ((TT) LA(1)) {
-								case TT.Assignment:
-								case TT.At:
-								case TT.BQString:
-								case TT.Colon:
-								case TT.Dot:
-								case TT.Id:
-								case TT.LBrace:
-								case TT.LBrack:
-								case TT.LParen:
-								case TT.NormalOp:
-								case TT.Not:
-								case TT.Number:
-								case TT.OtherLit:
-								case TT.PrefixOp:
-								case TT.PreSufOp:
-								case TT.SQString:
-								case TT.String:
-								case TT.Symbol:
-									rhs.Add(Expr(P.SuperExpr, out _));
-									break;
-								default:
-									goto stop;
-								}
+								if (LA(1 + 1) != (int) TT.Indent)
+									e = Expr(StartStmt);
+								else
+									goto match2;
 							}
 							break;
+						case EOF:
+						case TT.Comma:
+						case TT.Dedent:
 						case TT.LBrack:
-							{
-								la1 = (TT) LA(1);
-								if (la1 == TT.RBrack)
-									rhs.Add(Expr(P.SuperExpr, out _));
-								else
-									goto stop;
-							}
-							break;
 						case TT.LParen:
-							{
-								la1 = (TT) LA(1);
-								if (la1 == TT.RParen)
-									rhs.Add(Expr(P.SuperExpr, out _));
-								else
-									goto stop;
-							}
+						case TT.Not:
+						case TT.PreOrSufOp:
+						case TT.RBrace:
+						case TT.RBrack:
+						case TT.RParen:
+						case TT.Semicolon:
+							e = Expr(StartStmt);
 							break;
+						default:
+							goto match2;
+						}
+					}
+					break;
+				default:
+					e = Expr(StartStmt);
+					break;
+				}
+				break;
+			match2:
+				{
+					var id = MatchAny();
+					// line 95
+					var args = RVList<LNode>.Empty;
+					args.Add(Expr(P.SuperExpr));
+					// Line 97: (Particle)*
+					for (;;) {
+						switch ((TT) LA0) {
+						case TT.At:
+						case TT.Colon:
+						case TT.Id:
 						case TT.LBrace:
+						case TT.LParen:
+						case TT.Number:
+						case TT.OtherLit:
+						case TT.SpaceLParen:
+						case TT.String:
 							{
-								la1 = (TT) LA(1);
-								if (la1 == TT.RBrace)
-									rhs.Add(Expr(P.SuperExpr, out _));
-								else
-									goto stop;
+								// line 98
+								if (((TT) LA0 == TT.LParen)) {
+									var loc = args[args.Count - 2, args.Last].Range.End;
+									Error(0, "Expected a space before '(' (possibly missing ';' or ',' at {0})", loc);
+								}
+								args.Add(Particle());
 							}
 							break;
 						default:
@@ -720,183 +226,313 @@ namespace Loyc.Syntax.Les
 						}
 					}
 				stop:;
-					// line 146
-					e = MakeSuperExpr(e, ref primary, rhs);
+					// line 105
+					e = MarkSpecial(F.Call((Symbol) id.Value, args, id.StartIndex, args.Last.Range.EndIndex));
+				}
+			} while (false);
+			if ((t.TypeInt != 0)) {
+				e = e.WithRange(t.StartIndex, e.Range.EndIndex);
+			}
+			return e.PlusAttrs(attrs);
+		}
+		LNode Expr(Precedence context)
+		{
+			LNode e = default(LNode);
+			Token t = default(Token);
+			// line 120
+			Precedence prec;
+			e = PrefixExpr(context);
+			// Line 124: greedy( &{context.CanParse(prec = InfixPrecedenceOf(LT($LI)))} ((TT.Assignment|TT.BQString|TT.Dot|TT.NormalOp) | &{LA($LI + 1) != TT.Indent->@int} TT.Colon) Expr | &{context.CanParse(P.Primary)} FinishPrimaryExpr | &{context.CanParse(SuffixPrecedenceOf(LT($LI)))} TT.PreOrSufOp )*
+			for (;;) {
+				switch ((TT) LA0) {
+				case TT.Assignment:
+				case TT.BQString:
+				case TT.Dot:
+				case TT.NormalOp:
+					{
+						if (context.CanParse(prec = InfixPrecedenceOf(LT(0))))
+							goto matchExpr;
+						else
+							goto stop;
+					}
+				case TT.Colon:
+					{
+						if (context.CanParse(prec = InfixPrecedenceOf(LT(0)))) {
+							if (LA(0 + 1) != (int) TT.Indent)
+								goto matchExpr;
+							else
+								goto stop;
+						} else
+							goto stop;
+					}
+				case TT.LBrack:
+				case TT.LParen:
+				case TT.Not:
+					{
+						if (context.CanParse(P.Primary))
+							e = FinishPrimaryExpr(e);
+						else
+							goto stop;
+					}
+					break;
+				case TT.PreOrSufOp:
+					{
+						if (context.CanParse(SuffixPrecedenceOf(LT(0)))) {
+							t = MatchAny();
+							// line 137
+							e = F.Call(ToSuffixOpName((Symbol) t.Value), e, e.Range.StartIndex, t.EndIndex).SetStyle(NodeStyle.Operator);
+						} else
+							goto stop;
+					}
+					break;
+				default:
+					goto stop;
+				}
+				continue;
+			matchExpr:
+				{
+					// line 125
+					if ((!prec.CanMixWith(context))) {
+						Error(0, "Operator '{0}' is not allowed in this context. Add parentheses to clarify the code's meaning.", LT0.Value);
+					}
+					// Line 128: ((TT.Assignment|TT.BQString|TT.Dot|TT.NormalOp) | &{LA($LI + 1) != TT.Indent->@int} TT.Colon)
+					switch ((TT) LA0) {
+					case TT.Assignment:
+					case TT.BQString:
+					case TT.Dot:
+					case TT.NormalOp:
+						t = MatchAny();
+						break;
+					default:
+						{
+							Check(LA(0 + 1) != (int) TT.Indent, "LA($LI + 1) != TT.Indent->@int");
+							t = Match((int) TT.Colon);
+						}
+						break;
+					}
+					var rhs = Expr(prec);
+					// line 130
+					e = F.Call((Symbol) t.Value, e, rhs, e.Range.StartIndex, rhs.Range.EndIndex).SetStyle(NodeStyle.Operator);
 				}
 			}
-		stop2:;
-			// line 148
-			return attrs == null ? e : e.WithAttrs(attrs.ToRVList());
-		}
-		protected LNode SuperExpr()
-		{
-			// line 156
-			LNode _;
-			var e = Expr(StartStmt, out _);
-			// line 158
+		stop:;
+			// line 139
 			return e;
 		}
-		protected LNode SuperExprOpt()
+		LNode FinishPrimaryExpr(LNode e)
 		{
-			// Line 162: (SuperExpr | )
+			TT la0;
+			RVList<LNode> list = default(RVList<LNode>);
+			// Line 145: ( TT.LParen ExprList TT.RParen | TT.Not (TT.LParen ExprList TT.RParen / Expr) | TT.LBrack ExprList TT.RBrack )
+			la0 = (TT) LA0;
+			if (la0 == TT.LParen) {
+				// line 145
+				var endMarker = default(TokenType);
+				Skip();
+				list = ExprList(ref endMarker);
+				var c = Match((int) TT.RParen);
+				// line 148
+				e = MarkCall(F.Call(e, list, e.Range.StartIndex, c.EndIndex));
+				if ((endMarker == TT.Semicolon)) {
+					e.Style = NodeStyle.Statement | NodeStyle.Alternate;
+				}
+			} else if (la0 == TT.Not) {
+				Skip();
+				// line 153
+				var args = new RVList<LNode> { 
+					e
+				};
+				int endIndex;
+				// Line 154: (TT.LParen ExprList TT.RParen / Expr)
+				la0 = (TT) LA0;
+				if (la0 == TT.LParen) {
+					Skip();
+					args = ExprList(args);
+					var c = Match((int) TT.RParen);
+					// line 154
+					endIndex = c.EndIndex;
+				} else {
+					var T = Expr(P.Primary);
+					// line 155
+					args.Add(T);
+					endIndex = T.Range.EndIndex;
+				}
+				// line 157
+				e = F.Call(S.Of, args, e.Range.StartIndex, endIndex).SetStyle(NodeStyle.Operator);
+			} else {
+				// line 159
+				var args = new RVList<LNode> { 
+					e
+				};
+				Match((int) TT.LBrack);
+				args = ExprList(args);
+				var c = Match((int) TT.RBrack);
+				// line 161
+				e = F.Call(S.Bracks, args, e.Range.StartIndex, c.EndIndex).SetStyle(NodeStyle.Operator);
+			}
+			// line 163
+			return e;
+		}
+		LNode PrefixExpr(Precedence context)
+		{
+			LNode e = default(LNode);
+			LNode result = default(LNode);
+			Token t = default(Token);
+			// Line 168: ((TT.Assignment|TT.BQString|TT.Dot|TT.NormalOp|TT.Not|TT.PrefixOp|TT.PreOrSufOp) Expr | Particle)
 			switch ((TT) LA0) {
 			case TT.Assignment:
-			case TT.At:
 			case TT.BQString:
-			case TT.Colon:
 			case TT.Dot:
-			case TT.Id:
-			case TT.LBrace:
-			case TT.LBrack:
-			case TT.LParen:
 			case TT.NormalOp:
 			case TT.Not:
-			case TT.Number:
-			case TT.OtherLit:
 			case TT.PrefixOp:
-			case TT.PreSufOp:
-			case TT.SQString:
-			case TT.String:
-			case TT.Symbol:
+			case TT.PreOrSufOp:
 				{
-					var e = SuperExpr();
-					// line 162
-					return e;
+					t = MatchAny();
+					e = Expr(PrefixPrecedenceOf(t));
+					// line 170
+					result = F.Call((Symbol) t.Value, e, t.StartIndex, e.Range.EndIndex).SetStyle(NodeStyle.Operator);
 				}
 				break;
 			default:
-				// line 162
-				return MissingExpr;
+				result = Particle();
 				break;
 			}
+			return result;
 		}
-		protected void ExprList(ref RWList<LNode> exprs)
+		LNode Particle()
 		{
 			TT la0;
-			// line 166
-			exprs = exprs ?? new RWList<LNode>();
-			// Line 167: (SuperExpr (TT.Comma SuperExprOpt)* | TT.Comma SuperExprOpt (TT.Comma SuperExprOpt)*)?
+			LNode result = default(LNode);
+			TokenTree tree = default(TokenTree);
+			// Line 182: ( TT.Id | (TT.Number|TT.OtherLit|TT.String) | TT.At TT.LBrack TokenTree TT.RBrack | TT.Colon TT.Indent StmtList TT.Dedent greedy(TT.Colon)? | BracedBlock | (TT.LParen|TT.SpaceLParen) ExprList TT.RParen )
 			switch ((TT) LA0) {
-			case TT.Assignment:
-			case TT.At:
-			case TT.BQString:
-			case TT.Colon:
-			case TT.Dot:
 			case TT.Id:
-			case TT.LBrace:
-			case TT.LBrack:
-			case TT.LParen:
-			case TT.NormalOp:
-			case TT.Not:
-			case TT.Number:
-			case TT.OtherLit:
-			case TT.PrefixOp:
-			case TT.PreSufOp:
-			case TT.SQString:
-			case TT.String:
-			case TT.Symbol:
 				{
-					exprs.Add(SuperExpr());
-					// Line 168: (TT.Comma SuperExprOpt)*
-					for (;;) {
-						la0 = (TT) LA0;
-						if (la0 == TT.Comma) {
-							Skip();
-							exprs.Add(SuperExprOpt());
-						} else
-							break;
-					}
+					var id = MatchAny();
+					// line 183
+					result = F.Id(id).SetStyle(id.Style);
 				}
 				break;
-			case TT.Comma:
-				{
-					// line 169
-					exprs.Add(MissingExpr);
-					Skip();
-					exprs.Add(SuperExprOpt());
-					// Line 170: (TT.Comma SuperExprOpt)*
-					for (;;) {
-						la0 = (TT) LA0;
-						if (la0 == TT.Comma) {
-							Skip();
-							exprs.Add(SuperExprOpt());
-						} else
-							break;
-					}
-				}
-				break;
-			}
-		}
-		LNode SuperExprOptUntil(TokenType terminator)
-		{
-			TT la0;
-			// line 175
-			LNode e = MissingExpr;
-			// Line 176: (SuperExpr)?
-			switch ((TT) LA0) {
-			case TT.Assignment:
-			case TT.At:
-			case TT.BQString:
-			case TT.Colon:
-			case TT.Dot:
-			case TT.Id:
-			case TT.LBrace:
-			case TT.LBrack:
-			case TT.LParen:
-			case TT.NormalOp:
-			case TT.Not:
 			case TT.Number:
 			case TT.OtherLit:
-			case TT.PrefixOp:
-			case TT.PreSufOp:
-			case TT.SQString:
 			case TT.String:
-			case TT.Symbol:
-				e = SuperExpr();
+				{
+					var lit = MatchAny();
+					// line 185
+					result = F.Literal(lit).SetStyle(lit.Style);
+				}
 				break;
-			}
-			// line 177
-			bool error = false;
-			// Line 180: greedy(&{$LA != terminator} ~(EOF))*
-			for (;;) {
-				la0 = (TT) LA0;
-				if (la0 != EOF) {
+			case TT.At:
+				{
+					var o = MatchAny();
+					Match((int) TT.LBrack);
+					tree = TokenTree();
+					var c = Match((int) TT.RBrack);
+					// line 188
+					result = F.Literal(tree, o.StartIndex, c.EndIndex);
+				}
+				break;
+			case TT.Colon:
+				{
+					var o = MatchAny();
+					Match((int) TT.Indent);
+					var list = StmtList();
+					var c = Match((int) TT.Dedent);
+					// Line 190: greedy(TT.Colon)?
 					la0 = (TT) LA0;
-					if (la0 != terminator) {
-						// line 181
-						if ((!error)) {
-							error = true;
-							Error(0, "Expected " + terminator.ToString());
-						}
+					if (la0 == TT.Colon)
 						Skip();
-					} else
-						break;
-				} else
-					break;
+					// line 191
+					result = F.Braces(list, o.StartIndex, c.EndIndex);
+				}
+				break;
+			case TT.LBrace:
+				result = BracedBlock();
+				break;
+			case TT.LParen:
+			case TT.SpaceLParen:
+				{
+					// line 195
+					var endMarker = default(TT);
+					var o = MatchAny();
+					// line 196
+					var hasAttrList = (TT) LA0 == TT.LBrack;
+					var list = ExprList(ref endMarker);
+					var c = Match((int) TT.RParen);
+					// line 199
+					if ((endMarker == TT.Semicolon || list.Count != 1)) {
+						result = F.Call(S.Tuple, list, o.StartIndex, c.EndIndex);
+						if ((endMarker == TT.Comma)) {
+							var msg = "Tuples require ';' as a separator.";
+							if ((o.Type() == TT.SpaceLParen)) {
+								msg += " If a function call was intended, remove the space(s) before '('.";
+							}
+							ErrorSink.Write(Severity.Error, list[0].Range.End, msg);
+						}
+					} else {
+						result = hasAttrList ? list[0] : F.InParens(list[0], o.StartIndex, c.EndIndex);
+					}
+				}
+				break;
+			default:
+				{
+					// line 213
+					Error(0, "Expected a particle (id, literal, {braces} or (parens)).");
+					result = MissingExpr();
+				}
+				break;
 			}
-			// line 189
-			return e;
+			return result;
 		}
-		public void StmtList(ref RWList<LNode> exprs)
+		LNode BracedBlock()
 		{
-			TT la0;
-			// line 192
-			exprs = exprs ?? new RWList<LNode>();
-			var next = SuperExprOptUntil(TT.Semicolon);
-			// Line 194: (TT.Semicolon SuperExprOptUntil)*
+			LNode result = default(LNode);
+			var o = MatchAny();
+			var list = StmtList();
+			var c = Match((int) TT.RBrace);
+			result = F.Braces(list, o.StartIndex, c.EndIndex).SetStyle(NodeStyle.Statement);
+			return result;
+		}
+		TokenTree TokenTree()
+		{
+			TT la1;
+			TokenTree got_TokenTree = default(TokenTree);
+			TokenTree result = default(TokenTree);
+			result = new TokenTree(SourceFile);
+			// Line 227: nongreedy((TT.Indent|TT.LBrace|TT.LBrack|TT.LParen|TT.SpaceLParen) TokenTree (TT.Dedent|TT.RBrace|TT.RBrack|TT.RParen) / ~(EOF))*
 			for (;;) {
-				la0 = (TT) LA0;
-				if (la0 == TT.Semicolon) {
-					// line 194
-					exprs.Add(next);
-					Skip();
-					next = SuperExprOptUntil(TT.Semicolon);
-				} else
+				switch ((TT) LA0) {
+				case EOF:
+				case TT.Dedent:
+				case TT.RBrace:
+				case TT.RBrack:
+				case TT.RParen:
+					goto stop;
+				case TT.Indent:
+				case TT.LBrace:
+				case TT.LBrack:
+				case TT.LParen:
+				case TT.SpaceLParen:
+					{
+						la1 = (TT) LA(1);
+						if (la1 != EOF) {
+							var open = MatchAny();
+							got_TokenTree = TokenTree();
+							// line 229
+							result.Add(open.WithValue(got_TokenTree));
+							result.Add(Match((int) TT.Dedent, (int) TT.RBrace, (int) TT.RBrack, (int) TT.RParen));
+						} else
+							result.Add(MatchAny());
+					}
 					break;
+				default:
+					result.Add(MatchAny());
+					break;
+				}
 			}
-			// line 198
-			if ((next != (object) MissingExpr))
-				exprs.Add(next);
+		stop:;
+			return result;
 		}
 	}
 }

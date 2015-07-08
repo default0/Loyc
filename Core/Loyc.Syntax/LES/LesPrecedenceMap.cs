@@ -10,7 +10,7 @@ namespace Loyc.Syntax.Les
 	using S = CodeSymbols;
 	using P = LesPrecedence;
 
-	/// <summary>This class's main job is to maintains a table of 
+	/// <summary>This class's main job is to maintain a table of 
 	/// <see cref="Precedence"/> values for LES operators. When you ask about a
 	/// new operator, its precedence is cached for future reference.</summary>
 	public class LesPrecedenceMap
@@ -26,8 +26,8 @@ namespace Loyc.Syntax.Les
 		/// <summary>Forgets previously encountered operators to save memory.</summary>
 		public void Reset() {
 			this[OperatorShape.Suffix] = Pair.Create(PredefinedSuffixPrecedence.AsMutable(), P.Suffix2);
-			this[OperatorShape.Prefix] = Pair.Create(PredefinedPrefixPrecedence.AsMutable(), P.BackslashWord);
-			this[OperatorShape.Infix]  = Pair.Create(PredefinedInfixPrecedence.AsMutable(), P.BackslashWord);
+			this[OperatorShape.Prefix] = Pair.Create(PredefinedPrefixPrecedence.AsMutable(), P.Reserved);
+			this[OperatorShape.Infix]  = Pair.Create(PredefinedInfixPrecedence .AsMutable(), P.Reserved);
 			_suffixOpNames = null;
 		}
 
@@ -70,7 +70,6 @@ namespace Loyc.Syntax.Les
 				{ S.DotDot,      P.PrefixDots  }, // ..
 				{ S.OrBits,      P.PrefixOr    }, // |
 				{ S.Div,         P.Reserved    }, // /
-				{ S.Backslash,   P.Reserved    }, // \
 				{ S.LT,          P.Reserved    }, // <
 				{ S.GT,          P.Reserved    }, // >
 				{ S.QuestionMark,P.Reserved    }, // ?
@@ -95,9 +94,9 @@ namespace Loyc.Syntax.Les
 				{ S.Mul,         P.Multiply   }, // *
 				{ S.Div,         P.Multiply   }, // /
 				{ S.Mod,         P.Multiply   }, // %
-				{ S.Backslash,   P.Multiply   }, // \
-				{ S.Shr,         P.Multiply   }, // >>
-				{ S.Shl,         P.Multiply   }, // <<
+				//{ S.Backslash,   P.Multiply   }, // \  (no longer supported)
+				{ S.Shr,         P.Shift      }, // >>
+				{ S.Shl,         P.Shift      }, // <<
 				{ S.Add,         P.Add        }, // +
 				{ S.Sub,         P.Add        }, // -
 				{ S._RightArrow, P.Arrow      }, // ->
@@ -133,12 +132,12 @@ namespace Loyc.Syntax.Les
 			if (table.TryGetValue(symbol, out prec))
 				return prec;
 
-			string sym = symbol.ToString();
-			if (sym == "") return prec; // yikes!
+			string sym = (symbol ?? "").ToString();
+			if (sym == "") return @default; // empty operator!
+			// Note: all one-character operators should have been found in the table
 			char first = sym[0], last = sym[sym.Length - 1];
-			// All one-character operators should be found in the table
 
-			if (table == this[OperatorShape.Infix].A && last == '=')
+			if (last == '=' && first != '=' && table == this[OperatorShape.Infix].A)
 				return table[symbol] = table[S.Assign];
 			
 			var twoCharOp = GSymbol.Get(first.ToString() + last);
@@ -160,14 +159,14 @@ namespace Loyc.Syntax.Les
 		{
 			var map = new BitArray(128);
 			map['~']  = map['!'] = map['%'] = map['^'] = map['&'] = map['*'] = true;
-			map['\\'] = map['-'] = map['+'] = map['='] = map['|'] = map['<'] = true;
-			map['>']  = map['/'] = map['?'] = map[':'] = map['.'] = map['$'] = true;
+			map['-'] = map['+'] = map['='] = map['|'] = map['<'] = map['>'] = true;
+			map['/'] = map['?'] = map[':'] = map['.'] = map['$'] = true;
 			return map;
 		}
 		/// <summary>Returns true if this character is one of those that operators are normally made out of in LES.</summary>
 		public static bool IsOpChar(char c)
 		{
-			return OpChars[c];
+			return (uint)c < (uint)OpChars.Count ? OpChars[c] : false;
 		}
 		/// <summary>Returns true if the given Symbol can be printed as an operator 
 		/// without escaping it.</summary>
@@ -191,22 +190,21 @@ namespace Loyc.Syntax.Les
 			}
 			return true;
 		}
-		/// <summary>Returns true if a given Les operator can only be printed with 
-		/// backticks, because a leading backslash is insufficient.</summary>
-		public static bool RequiresBackticks(Symbol s)
-		{
-			string name = s.Name;
-			for (int i = 0; i < name.Length; i++)
-				if (!IsOpChar(name[i]) && !char.IsLetter(name[i]) && !char.IsDigit(name[i]) 
-					&& name[i] != '_' && name[i] != '\'')
-					return true;
-			return name.Length == 0;
-		}
+
+		// /// <summary>Returns true if a given Les operator can only be printed with 
+		// /// backticks, because a leading backslash is insufficient.</summary>
+		// public static bool RequiresBackticks(Symbol s)
+		// {
+		// 	string name = s.Name;
+		// 	for (int i = 0; i < name.Length; i++)
+		// 		if (!IsOpChar(name[i]) && !char.IsLetter(name[i]) && !char.IsDigit(name[i]) 
+		// 			&& name[i] != '_' && name[i] != '\'')
+		// 			return true;
+		// 	return name.Length == 0;
+		// }
 
 		/// <summary>Given a normal operator symbol like <c>(Symbol)"++"</c>, gets
-		/// the suffix form of the name, such as <c>(Symbol)"suf++"</c>. In LES,
-		/// operators that end with a backslash (\) are always suffix operators, so
-		/// their names are left unchanged.</summary>
+		/// the suffix form of the name, such as <c>(Symbol)"suf++"</c>.</summary>
 		/// <remarks>op must be a Symbol, but the parameter has type object to avoid casting Token.Value in the parser.</remarks>
 		public Symbol ToSuffixOpName(object symbol)
 		{
@@ -216,9 +214,9 @@ namespace Loyc.Syntax.Les
 				return name;
 
 			var was = symbol.ToString();
-			if (was.EndsWith("\\"))
-				return _suffixOpNames[symbol] = (Symbol)symbol;
-			else
+			//if (was.EndsWith("\\"))
+			//	return _suffixOpNames[symbol] = (Symbol)symbol;
+			//else
 				return _suffixOpNames[symbol] = GSymbol.Get(@"suf" + symbol.ToString());
 		}
 
@@ -236,8 +234,9 @@ namespace Loyc.Syntax.Les
 				bareName = (Symbol)name.Name.Substring(3);
 			else {
 				bareName = name;
-				if (!name.Name.EndsWith(@"\"))
-					return false;
+				return false;
+			//	if (!name.Name.EndsWith(@"\"))
+			//		return false;
 			}
 			return !checkNatural || IsNaturalOperator(bareName);
 		}

@@ -36,16 +36,18 @@ namespace Loyc.Syntax.Les
 	/// <para/>
 	/// "@" is not considered an operator. It is used to mark a sequence of 
 	/// punctuation and/or non-punctuation characters as an identifier, a symbol,
-	/// or a special literal. "#" is not an operator; like an underscore, it is 
-	/// considered to be an identifier character, and it's used to mark "keywords".
+	/// or a special literal. "#" is not an operator; like an underscore, the 
+	/// hash sign is considered to be an identifier character, and while it is 
+	/// conventionally used to mark "keywords", the parser does not assign any 
+	/// special meaning to it.
 	/// <para/>
 	/// "," and ";" are not considered operators; rather they are separators, and
 	/// they cannot be combined with operators. For example, "?,!" is parsed as 
 	/// three separate tokens.
 	/// <para/>
 	/// The following table shows all the precedence levels and associativities
-	/// of the "built-in" LES operators, except `backtick` and the arrow operators 
-	/// => and ->, which are special. Each precedence level has a name, which 
+	/// of the "built-in" LES operators, except `backtick` and the "lambda" 
+	/// operator =>, which is special. Each precedence level has a name, which 
 	/// corresponds to a static field of this class. All binary operators are 
 	/// left-associative unless otherwise specified.
 	/// <ol>
@@ -104,8 +106,8 @@ namespace Loyc.Syntax.Les
 	/// added the !! operator to "fill in the gap".</li>
 	/// <li>There were no prefix operators with low precedence, so I added ".." 
 	/// whose precedence is just above binary "..", and "|" which has a precedence 
-	/// lower than anything except attributes (note that this "operator" is used 
-	/// for pattern matching and variants in Nemerle.)</li>
+	/// lower than anything except attributes (this "operator" is inspired by
+	/// Nemerle, which uses "|" in pattern matching and variants.)</li>
 	/// </ul>
 	/// I also wanted to have a little "room to grow"--to defer the precedence 
 	/// decision to a future time for some operators. So the precedence of the 
@@ -137,8 +139,8 @@ namespace Loyc.Syntax.Les
 	/// binary or prefix) operators. Having only a single role makes these 
 	/// operators unambiguous inside superexpressions.
 	/// <para/>
-	/// An operator cannot have all three roles (suffix, prefix and binary); 
-	/// that would be ambiguous. For example, if "-" could also be a suffix 
+	/// An operator cannot have all three roles (suffix, prefix and binary); that 
+	/// would be overly ambiguous. For example, if "-" could also be a suffix 
 	/// operator then <c>x - + y</c> could be parsed as <c>(x -) + y</c> as well 
 	/// as <c>x - (+ y)</c>. More subtly, LES does not define any operators that
 	/// could take binary or suffix roles, because that would also be ambiguous. 
@@ -150,11 +152,16 @@ namespace Loyc.Syntax.Les
 	/// OR it can contain operators that serve as binary and suffix operators, 
 	/// but a language is ambiguous if it has both kinds of operators at the 
 	/// same time.
-	/// <para/>
-	/// So, to determine the precedence of any given operator, first you must
-	/// decide, mainly based on the context in which the operator appears, whether 
-	/// it is a prefix, binary, or suffix operator. Suffix operators can only be
-	/// derived from the following operators: <c>++, --, \\</c>
+	///
+	/// <h3>How to detect an operator's precedence</h3>
+	/// 
+	/// To determine the precedence of any given operator, first you must
+	/// decide, mainly based on the context in which the operator appears and the
+	/// text of the operator, whether it is a prefix, binary, or suffix operator. 
+	/// Suffix operators can only be derived from the operators <c>++, --, \\</c>
+	/// ("derived" means that you can add additional operator characters in the 
+	/// middle, e.g. <c>+++</c> and <c>-%-</c> are can be prefix or suffix 
+	/// operators.)
 	/// <para/>
 	/// If an operator starts with a backslash (\), the backslash is not considered 
 	/// part of the operator name and it not used for the purpose of choosing 
@@ -169,8 +176,9 @@ namespace Loyc.Syntax.Les
 	/// in order:
 	/// <ol>
 	/// <li>If the operator is binary and it is exactly equal to ">=" or "&lt;=" 
-	/// or "!=" or "==", the precedence is Compare.</li>
-	/// <li>If the operator is binary and Z is '=', the precedence is Assign.</li>
+	/// or "!=", the precedence is Compare.</li>
+	/// <li>If the operator is binary, A is NOT '=', and Z is '=', then the 
+	/// precedence is Assign.</li>
 	/// <li>Look for an operator named AZ. If it is defined, the operator 
 	/// will have the same precedence. For example, binary "=|>" has the same 
 	/// precedence as binary "=>".</li>
@@ -228,31 +236,31 @@ namespace Loyc.Syntax.Les
 	/// <seealso cref="Precedence"/>
 	public static class LesPrecedence
 	{
-		public static readonly Precedence Substitute  = new Precedence(102,103,103,102);
-		public static readonly Precedence Primary     = new Precedence(100,101,100);
-		public static readonly Precedence NullDot     = new Precedence(98,  99, 98);
-		public static readonly Precedence DoubleBang  = new Precedence(96,  97, 97,96);
-		public static readonly Precedence Prefix      = new Precedence(90,  91, 91,90);
-		public static readonly Precedence Power       = new Precedence(80,  81, 80);
-		public static readonly Precedence Suffix2     = new Precedence(78,  79, 78);
-		public static readonly Precedence Multiply    = new Precedence(70,  71, 70);
-		public static readonly Precedence Arrow       = new Precedence(64,  65, 64);
-		public static readonly Precedence Add         = new Precedence(60,  61, 60);
-		public static readonly Precedence AndBits     = new Precedence(56,  57, 56);
-		public static readonly Precedence OrBits      = new Precedence(54,  55, 54);
-		public static readonly Precedence OrIfNull    = new Precedence(52,  53, 52);
-		public static readonly Precedence PrefixDots  = new Precedence(52,  53, 53,52);
-		public static readonly Precedence Range       = new Precedence(50,  51, 50);
-		public static readonly Precedence Backtick    = new Precedence(45,  79, 46,78);
-		public static readonly Precedence Reserved    = new Precedence(45,  97, 45,97);
-		public static readonly Precedence Compare     = new Precedence(40,  41, 40);
-		public static readonly Precedence And         = new Precedence(22,  23, 22);
-		public static readonly Precedence Or          = new Precedence(18,  19, 18);
-		public static readonly Precedence IfElse      = new Precedence(10,  11, 11,10);
-		public static readonly Precedence BackslashWord = new Precedence(4, 5, 4);
-		public static readonly Precedence Assign      = new Precedence( 0,   1, 1, 0);
-		public static readonly Precedence Lambda      = new Precedence(-2,  -1, 75,-1);
-		public static readonly Precedence PrefixOr    = new Precedence(-10, -9, -9,-10);
-		public static readonly Precedence SuperExpr   = new Precedence(-20, -19, -20);
+		public static readonly Precedence Substitute = new Precedence(106, 105); // special prefix ops $ . :
+		public static readonly Precedence Primary     = new Precedence(100);
+		public static readonly Precedence NullDot     = new Precedence(95);
+		public static readonly Precedence DoubleBang  = new Precedence(91, 90);
+		public static readonly Precedence Prefix      = new Precedence(85);      // most prefix/suffix ops
+		public static readonly Precedence Power       = new Precedence(80);
+		public static readonly Precedence Suffix2     = new Precedence(75);      // no longer used
+		public static readonly Precedence Multiply    = new Precedence(70);
+		public static readonly Precedence Arrow       = new Precedence(65);
+		public static readonly Precedence Add         = new Precedence(60);
+		public static readonly Precedence Shift       = new Precedence(55, 55, 55, 70);
+		public static readonly Precedence PrefixDots  = new Precedence(50);      // prefix ..
+		public static readonly Precedence Range       = new Precedence(45);
+		public static readonly Precedence OrIfNull    = new Precedence(40, 40, 40, 76);
+		public static readonly Precedence Backtick    = new Precedence(40, 40, 40, 75);
+		public static readonly Precedence Reserved    = new Precedence(40, 40, 40, 90);
+		public static readonly Precedence Compare     = new Precedence(35);
+		public static readonly Precedence AndBits     = new Precedence(30, 30, 25, 50);
+		public static readonly Precedence OrBits      = new Precedence(25, 25, 25, 50);
+		public static readonly Precedence And         = new Precedence(20);
+		public static readonly Precedence Or          = new Precedence(15);
+		public static readonly Precedence IfElse      = new Precedence(11, 10);
+		public static readonly Precedence Assign      = new Precedence(6, 5);
+		public static readonly Precedence Lambda      = new Precedence(77, 0, -1, -1);
+		public static readonly Precedence PrefixOr    = new Precedence(0);       // prefix
+		public static readonly Precedence SuperExpr   = new Precedence(-5);
 	}
 }
